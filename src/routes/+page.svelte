@@ -1,19 +1,12 @@
-<main>
-	<h1>The<br />Dice<br />Game</h1>
+<h1>The<br />Dice<br />Game</h1>
 
-	<a href="/new-setup/player-select">Start New Game</a>
-	<a href="/resume-game">Resume Game</a>
-	<a href="/settings/manage-users">Manage Users</a>
-	<a href="/settings/manage-games">Manage Games</a>
-</main>
+<a href="/new-setup/player-select">Start New Game</a>
+<a href="/resume-game">Resume Game</a>
+<a href="/settings/manage-users">Manage Users</a>
+<a href="/settings/manage-games">Manage Games</a>
 
 <style>
-	main {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-	}
-	main h1 {
+	h1 {
 		font-size: 5rem;
 	}
 	a {
