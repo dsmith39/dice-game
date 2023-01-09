@@ -1,5 +1,6 @@
 // @ts-nocheck
 import dbConnect from '$lib/db';
+import { redirect } from '@sveltejs/kit';
 import { v4 as uuidv4 } from 'uuid';
 import { GameModel } from '$lib/models/Game';
 export const actions = {
@@ -16,9 +17,9 @@ export const actions = {
 		};
 		dbConnect();
 		await GameModel.create(payload);
-
-		return {
-			success: true
-		};
+		throw redirect('301', `/setup/setup-players/${id}`);
+		// return {
+		// 	success: true,
+		// };
 	}
 };
