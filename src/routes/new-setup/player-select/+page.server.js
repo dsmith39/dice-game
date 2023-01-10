@@ -35,6 +35,6 @@ export const actions = {
 			currentTurn: 1
 		};
 		await GameModel.create(gamePayload);
-		throw redirect('301', `/game`);
+		throw redirect('301', `/game/${gameID}`);
 	}
 };
