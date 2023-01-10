@@ -2,22 +2,20 @@
 import dbConnect from '$lib/db';
 import { redirect } from '@sveltejs/kit';
 import { v4 as uuidv4 } from 'uuid';
-import { GameModel } from '$lib/models/Game';
+import { PlayerModel } from '$lib/models/Player';
 export const actions = {
-	create: async (event) => {
+	default: async (event) => {
 		event.preventDefault;
 		const data = await event.request.formData();
-		let playerNum = data.get('playerChoice');
-		let players = [];
+		let nickname = data.get('nickname');
 		let id = uuidv4();
 		let payload = {
 			id: id,
-			playerNum: playerNum,
-			players: players
+			nickname: nickname
 		};
 		await dbConnect();
-		await GameModel.create(payload);
-		throw redirect('301', `/new-setup/setup-players/${id}`);
+		await PlayerModel.create(payload);
+		throw redirect('301', `/settings/manage-users`);
 		// return {
 		// 	success: true,
 		// };

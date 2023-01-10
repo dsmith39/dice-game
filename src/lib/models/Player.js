@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 const PlayerSchema = new mongoose.Schema({
+	id: {
+		// Player's ID
+		type: String,
+		required: [true, 'Please provide an ID']
+	},
 	nickname: {
 		// Player's Nickname
 		type: String,
@@ -11,7 +16,21 @@ const PlayerSchema = new mongoose.Schema({
 	score: {
 		// The player's score
 		type: Number
+	},
+	createdDate: {
+		// The date the player was created
+		type: Date,
+		default: Date.now
+	},
+	totalScore: {
+		// The player's total score
+		type: Number
+	},
+	isPlaying: {
+		// If the player is playing
+		type: Boolean,
+		default: false
 	}
 });
 
-export default mongoose.models.Request || mongoose.model('Player', PlayerSchema);
+export const PlayerModel = mongoose.models.Request ?? mongoose.model('Player', PlayerSchema);
