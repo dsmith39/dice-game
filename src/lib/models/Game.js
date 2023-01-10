@@ -4,8 +4,7 @@ const GameSchema = new mongoose.Schema({
 	id: {
 		// Player;s Nickname
 		type: String,
-		required: [true, 'Please provide a nickname'],
-		maxlength: [60, 'First name cannot be more than 60 characters']
+		required: [true, 'Please provide a nickname']
 	},
 	playerNum: {
 		// The number of players in the game
@@ -14,6 +13,10 @@ const GameSchema = new mongoose.Schema({
 	players: {
 		// The players in the game
 		type: Array
+	},
+	currentTurn: {
+		// The current turn
+		type: Number
 	}
 });
 

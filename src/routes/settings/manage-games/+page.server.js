@@ -4,6 +4,7 @@ import { GameModel } from '$lib/models/Game';
 export async function load() {
 	dbConnect();
 	let games = await GameModel.find();
+	games = JSON.parse(JSON.stringify(games));
 	if (!games || games.length === 0) throw error(404, 'There are no saved games.');
 	console.log(games);
 	return {

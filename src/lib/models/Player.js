@@ -13,19 +13,12 @@ const PlayerSchema = new mongoose.Schema({
 		maxlength: [60, 'First name cannot be more than 60 characters']
 	},
 
-	score: {
-		// The player's score
-		type: Number
-	},
 	createdDate: {
 		// The date the player was created
 		type: Date,
 		default: Date.now
 	},
-	totalScore: {
-		// The player's total score
-		type: Number
-	},
+
 	isPlaying: {
 		// If the player is playing
 		type: Boolean,
