@@ -1,6 +1,5 @@
 <script>
 	// @ts-nocheck
-
 	import lodash from 'lodash';
 
 	export let data;
@@ -64,10 +63,7 @@
 		}
 		return diceRolls;
 	}
-	// Function to handle the dice roll
-	// This function will be called when the user clicks the roll dice button
-	// It will pass the number of dice to roll to the rollDice function
-	// It will then set the diceRolls variable to the returned array
+	// Function sets the diceRolls array to the result of the rollDice function
 	function handleDiceRoll(diceNumber) {
 		diceRolls = rollDice(diceNumber);
 	}
@@ -97,6 +93,27 @@
 		chosenDice = lodash.compact(chosenDice);
 		console.log(chosenDice);
 	}
+	function handleScore() {
+		// If the chosenDice array is empty, do nothing
+		if (chosenDice.length === 0) {
+			return;
+		}
+		// If the chosenDice array is not empty, add the sum of the array to the currentScore
+		if (chosenDice.length > 0) {
+			data.game.players[data.game.currentTurn - 1].currentScore = lodash.sum(chosenDice);
+			data.game.players[data.game.currentTurn - 1].totalScore =
+				data.game.players[data.game.currentTurn - 1].totalScore +
+				data.game.players[data.game.currentTurn - 1].currentScore;
+			console.log(data.game.players[data.game.currentTurn - 1].currentScore);
+			console.log(data.game.players[data.game.currentTurn - 1].totalScore);
+			// Reset the chosenDice array
+			chosenDice = [];
+			// Reset the diceRolls array
+			diceRolls = [];
+			// Change the turn
+			changeTurn();
+		}
+	}
 </script>
 
 <article>
@@ -111,17 +128,12 @@
 	<section class="diceSection">
 		{#each diceRolls as dice, i}
 			<!-- svelte-ignore a11y-click-events-have-key-events -->
-			{#if diceRolls[i] === undefined}
-				<div class="hidden">
-					{dice}
-				</div>
-			{:else}
-				<div on:click={() => handleDiceSelect(i)}>
-					{dice}
-				</div>
-			{/if}
+			<div on:click={() => handleDiceSelect(i)}>
+				{dice}
+			</div>
 		{/each}
 	</section>
+	<button on:click|preventDefault={() => handleDiceRoll(5)}>Roll Dice</button>
 </article>
 <article>
 	<h2>Chosen Dice</h2>
@@ -135,7 +147,6 @@
 	</section>
 </article>
 
-<button on:click|preventDefault={() => handleDiceRoll(5)}>Roll Dice</button>
 <button on:click|preventDefault={() => changeTurn()}>Next Turn</button>
 
 <style>
