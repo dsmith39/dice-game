@@ -8,6 +8,8 @@
 	let totalTurns = 1;
 	let diceRolls = [];
 	let chosenDice = [];
+	let confirmedDice = [];
+	let alerts = [];
 
 	// Function to change the current turn
 	function changeTurn() {
@@ -66,6 +68,25 @@
 	// Function sets the diceRolls array to the result of the rollDice function
 	function handleDiceRoll(diceNumber) {
 		diceRolls = rollDice(diceNumber);
+		if (diceRolls.length === 0) {
+			alerts = lodash.concat(alerts, {
+				message: 'You must roll the dice before you can choose them',
+				type: 'error'
+			});
+		}
+		if (diceRolls.length > 0) {
+			alerts = lodash.concat(alerts, {
+				message: 'You have rolled the dice',
+				type: 'success'
+			});
+		}
+		if (lodash.toString(diceRolls) === '1,2,3,4,5' || lodash.toString(diceRolls) === '2,3,4,5,6') {
+			alerts = lodash.concat(alerts, {
+				message: 'You have rolled a Flush!',
+				type: 'success'
+			});
+		}
+		console.log(alerts);
 	}
 	// If the dice is already in the chosenDice array, remove it
 	// If the dice is not in the chosenDice array, add it
@@ -82,7 +103,7 @@
 		console.log(diceRolls);
 	}
 	// A function to put numbers back in their original spot
-	function returnChoice(i) {
+	function undoChoice(i) {
 		// this is the roll that was clicked
 		let chosenRoll = chosenDice[i];
 		//This adds the chosen roll to the diceRolls array
@@ -93,36 +114,25 @@
 		chosenDice = lodash.compact(chosenDice);
 		console.log(chosenDice);
 	}
-	function handleScore() {
-		// If the chosenDice array is empty, do nothing
-		if (chosenDice.length === 0) {
-			return;
-		}
-		// If the chosenDice array is not empty, add the sum of the array to the currentScore
-		if (chosenDice.length > 0) {
-			data.game.players[data.game.currentTurn - 1].currentScore = lodash.sum(chosenDice);
-			data.game.players[data.game.currentTurn - 1].totalScore =
-				data.game.players[data.game.currentTurn - 1].totalScore +
-				data.game.players[data.game.currentTurn - 1].currentScore;
-			console.log(data.game.players[data.game.currentTurn - 1].currentScore);
-			console.log(data.game.players[data.game.currentTurn - 1].totalScore);
-			// Reset the chosenDice array
-			chosenDice = [];
-			// Reset the diceRolls array
-			diceRolls = [];
-			// Change the turn
-			changeTurn();
-		}
+	function confirmChoice() {
+		// This adds the chosen dice to the confirmedDice array
+		confirmedDice = lodash.concat(confirmedDice, chosenDice);
+		// This removes the chosen dice from the chosenDice array
+		chosenDice = [];
+		// This removes any undefined values from the confirmedDice array
+		confirmedDice = lodash.compact(confirmedDice);
+		console.log(confirmedDice);
 	}
 </script>
 
+<!-- The Player Information Box -->
 <article>
 	<p>Turn: {totalTurns}</p>
 	<p>Player: {data.game.players[data.game.currentTurn - 1].nickname}</p>
 	<p>Round Score: {data.game.players[data.game.currentTurn - 1].currentScore}</p>
 	<p>Total Score: {data.game.players[data.game.currentTurn - 1].totalScore}</p>
 </article>
-
+<!-- Dice Rolling Section -->
 <article>
 	<h2>Dice Roll</h2>
 	<section class="diceSection">
@@ -135,18 +145,32 @@
 	</section>
 	<button on:click|preventDefault={() => handleDiceRoll(5)}>Roll Dice</button>
 </article>
+<!-- Choose Dice Section -->
 <article>
 	<h2>Chosen Dice</h2>
 	<section class="diceSection">
 		{#each chosenDice as dice, i}
 			<!-- svelte-ignore a11y-click-events-have-key-events -->
-			<div on:click={() => returnChoice(i)}>
+			<div on:click={() => undoChoice(i)}>
+				{dice}
+			</div>
+		{/each}
+	</section>
+	<button on:click|preventDefault={() => confirmChoice()}>Save These Dice</button>
+</article>
+<!-- Show Chosen Dice -->
+<article>
+	<h2>Round Summary</h2>
+	<section class="diceSection">
+		{#each confirmedDice as dice, i}
+			<div>
 				{dice}
 			</div>
 		{/each}
 	</section>
 </article>
 
+<!-- Go To Next Turn -->
 <button on:click|preventDefault={() => changeTurn()}>Next Turn</button>
 
 <style>
@@ -154,8 +178,5 @@
 		display: flex;
 		flex-direction: row;
 		justify-content: space-between;
-	}
-	.hidden {
-		display: none;
 	}
 </style>
