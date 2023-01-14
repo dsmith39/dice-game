@@ -6,7 +6,6 @@ export async function load({ params }) {
 	dbConnect();
 	let game = await GameModel.find({ id: id });
 	game = JSON.parse(JSON.stringify(game));
-	console.log(game[0].playerNum);
 	return {
 		game: game[0]
 	};

@@ -17,7 +17,7 @@
 		if (data.game.currentTurn > data.game.players.length) {
 			data.game.currentTurn = 1;
 		}
-		console.log(data.game.currentTurn);
+		data.game.currentTurn;
 	}
 	// Function to roll dice and return an array of the dice rolls
 	function rollDice(diceNumber) {
@@ -69,7 +69,7 @@
 	}
 	// If the dice is already in the chosenDice array, remove it
 	// If the dice is not in the chosenDice array, add it
-	function handleDiceSelect(i) {
+	function moveToChosenDice(i) {
 		console.log('Button Clicked');
 		// this is the roll that was clicked
 		let chosenRoll = diceRolls[i];
@@ -128,7 +128,7 @@
 	<section class="diceSection">
 		{#each diceRolls as dice, i}
 			<!-- svelte-ignore a11y-click-events-have-key-events -->
-			<div on:click={() => handleDiceSelect(i)}>
+			<div on:click={() => moveToChosenDice(i)}>
 				{dice}
 			</div>
 		{/each}
