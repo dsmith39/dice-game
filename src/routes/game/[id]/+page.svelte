@@ -133,7 +133,7 @@
 		 */
 		let chosenRoll = diceRolls[i];
 		console.log(typeof chosenRoll);
-		if (chosenRoll == (2 || 3 || 4 || 6)) {
+		if (chosenRoll === 2 || chosenRoll === 3 || chosenRoll === 4 || chosenRoll === 6) {
 			alerts = lodash.concat(alerts, {
 				message: 'You cannot choose a 2, 3, 4 or 6',
 				type: 'error'
