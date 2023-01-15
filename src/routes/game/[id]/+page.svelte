@@ -243,7 +243,7 @@
 </article>
 
 <!-- Dice Rolling Section -->
-{#if confirmedDice.length === 0 || !alerts.crapout}
+{#if confirmedDice.length === 0}
 	<article>
 		<h2>Dice Roll</h2>
 		<section class="diceSection">
@@ -254,24 +254,25 @@
 				</div>
 			{/each}
 		</section>
-
-		{#if diceRolls.length === 4}
-			<button on:click|preventDefault={() => handleDiceRoll(4)}>Roll 4 Dice</button>
-		{/if}
-		{#if diceRolls.length === 3}
-			<button on:click|preventDefault={() => handleDiceRoll(3)}>Roll 3 Dice</button>
-		{/if}
-		{#if diceRolls.length === 2}
-			<button on:click|preventDefault={() => handleDiceRoll(2)}>Roll 2 Dice</button>
-		{/if}
-		{#if diceRolls.length === 1}
-			<button on:click|preventDefault={() => handleDiceRoll(1)}>Roll 1 Dice</button>
-		{/if}
-		{#if diceRolls.length === 0}
-			<button on:click|preventDefault={() => handleDiceRoll(5)}>Roll</button>
-		{/if}
-		{#if diceRolls.length === 5}
-			<button on:click|preventDefault={() => handleDiceRoll(5)}>Roll 5 Dice</button>
+		{#if alerts.crapout === false}
+			{#if diceRolls.length === 4}
+				<button on:click|preventDefault={() => handleDiceRoll(4)}>Roll 4 Dice</button>
+			{/if}
+			{#if diceRolls.length === 3}
+				<button on:click|preventDefault={() => handleDiceRoll(3)}>Roll 3 Dice</button>
+			{/if}
+			{#if diceRolls.length === 2}
+				<button on:click|preventDefault={() => handleDiceRoll(2)}>Roll 2 Dice</button>
+			{/if}
+			{#if diceRolls.length === 1}
+				<button on:click|preventDefault={() => handleDiceRoll(1)}>Roll 1 Dice</button>
+			{/if}
+			{#if diceRolls.length === 0}
+				<button on:click|preventDefault={() => handleDiceRoll(5)}>Roll</button>
+			{/if}
+			{#if diceRolls.length === 5}
+				<button on:click|preventDefault={() => handleDiceRoll(5)}>Roll 5 Dice</button>
+			{/if}
 		{/if}
 	</article>
 {/if}
@@ -322,7 +323,8 @@
 	</article>
 {/if}
 {#if alerts.crapout === true}
-	<p>You Crapped Out</p>
+	<h3>You Crapped Out</h3>
+	<h3>Score: {score.totalScore}</h3>
 {/if}
 {#if alerts.jackpot === true}
 	<p>You Hit the Jackpot</p>
