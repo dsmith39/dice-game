@@ -268,7 +268,7 @@
 			<button on:click|preventDefault={() => handleDiceRoll(1)}>Roll 1 Dice</button>
 		{/if}
 		{#if diceRolls.length === 0}
-			<button on:click|preventDefault={() => handleDiceRoll(5)}>First Roll</button>
+			<button on:click|preventDefault={() => handleDiceRoll(5)}>Roll</button>
 		{/if}
 		{#if diceRolls.length === 5}
 			<button on:click|preventDefault={() => handleDiceRoll(5)}>Roll 5 Dice</button>
