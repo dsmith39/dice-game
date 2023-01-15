@@ -1,13 +1,9 @@
 // @ts-nocheck
-import dbConnect from '$lib/db';
 import { redirect } from '@sveltejs/kit';
 import { v4 as uuidv4 } from 'uuid';
-import { GameModel } from '$lib/models/Game';
-import { PlayerModel } from '$lib/models/Player';
 export const actions = {
 	create: async (event) => {
 		event.preventDefault;
-		await dbConnect();
 		const data = await event.request.formData();
 		let playerNum = data.get('playerChoice');
 		let players = [];
@@ -25,7 +21,13 @@ export const actions = {
 
 				isPlaying: true
 			};
-			await PlayerModel.create(playerPayload);
+			await fetch(`http://ec2-44-208-166-56.compute-1.amazonaws.com/players`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(playerPayload)
+			});
 		}
 		let gameID = uuidv4();
 		let gamePayload = {
@@ -34,7 +36,13 @@ export const actions = {
 			players: players,
 			currentTurn: 1
 		};
-		await GameModel.create(gamePayload);
+		await fetch(`http://ec2-44-208-166-56.compute-1.amazonaws.com/games`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(gamePayload)
+		});
 		throw redirect('301', `/game/${gameID}`);
 	}
 };

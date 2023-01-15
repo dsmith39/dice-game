@@ -1,11 +1,10 @@
 // @ts-nocheck
-import dbConnect from '$lib/db';
-import { GameModel } from '$lib/models/Game';
-export async function load({ params }) {
+export async function load({ fetch, params }) {
 	let id = params.id;
-	dbConnect();
-	let game = await GameModel.find({ id: id });
-	game = JSON.parse(JSON.stringify(game));
+	let game = await fetch(`http://ec2-44-208-166-56.compute-1.amazonaws.com/games/${id}`).then((r) =>
+		r.json()
+	);
+
 	return {
 		game: game[0]
 	};

@@ -2,16 +2,36 @@
 	// @ts-nocheck
 	import lodash from 'lodash';
 
+	/** The Game data that is fetched from the database */
 	export let data;
 
 	//States
+	/**
+	 * @type {number} **The Total Number of Turns Taken**
+	 * */
 	let totalTurns = 1;
+	/**
+	 * @type {Array<Number>} **An Array that stores what dice values the user rolls**
+	 */
 	let diceRolls = [];
+	/**
+	 * @type {Array<Number>} **An Array that stores what dice values the user chooses. The choice is made by selecting a value from the `diceRolls` array**
+	 */
 	let chosenDice = [];
+	/**
+	 * @type {Array<Number>} **An Array that stores what dice values the user confirms. The choice is made by confirming the values from the `chosenDice` array**
+	 */
 	let confirmedDice = [];
+	/**
+	 * @type {{message: String, type: String}} An Array that stores user feedback messages
+	 */
 	let alerts = [];
 
-	// Function to change the current turn
+	/**
+	 * ## Change Turn
+	 * @description **This is a function that changes the current turn. It also accumlates the number of total turns taken in the game so far**
+	 * @returns {number} The current turn
+	 */
 	function changeTurn() {
 		data.game.currentTurn++;
 		totalTurns++;
@@ -21,7 +41,12 @@
 		}
 		data.game.currentTurn;
 	}
-	// Function to roll dice and return an array of the dice rolls
+	/**
+	 * ## Roll Dice
+	 * @description **This is a function that rolls the dice and returns an array of the dice rolls**
+	 * @param {number} diceNumber The number of dice to roll (1-5)
+	 * @returns {number[]} An array of the dice rolls
+	 */
 	function rollDice(diceNumber) {
 		// If the diceNumber is 1, roll a single dice
 		if (diceNumber === 1) {
@@ -66,6 +91,11 @@
 		return diceRolls;
 	}
 	// Function sets the diceRolls array to the result of the rollDice function
+	/**
+	 * ## Handle Dice Roll
+	 * @description **This is a function that handles the dice roll, using `rollDice()` {@link rollDice}. It also checks if the dice roll is a Flush**
+	 * @param {number} diceNumber The number of dice to roll (1-5)
+	 */
 	function handleDiceRoll(diceNumber) {
 		diceRolls = rollDice(diceNumber);
 		if (diceRolls.length === 0) {
@@ -90,10 +120,27 @@
 	}
 	// If the dice is already in the chosenDice array, remove it
 	// If the dice is not in the chosenDice array, add it
+	/**
+	 * ## Move To Chosen Dice
+	 * @description **This is a function that moves the dice from the diceRolls array to the chosenDice array**
+	 * @param {number} i The index of the dice roll in the diceRolls array
+	 */
 	function moveToChosenDice(i) {
 		console.log('Button Clicked');
 		// this is the roll that was clicked
+		/**
+		 * @type {number} chosenRoll The dice roll that was clicked
+		 */
 		let chosenRoll = diceRolls[i];
+		console.log(typeof chosenRoll);
+		if (chosenRoll == (2 || 3 || 4 || 6)) {
+			alerts = lodash.concat(alerts, {
+				message: 'You cannot choose a 2, 3, 4 or 6',
+				type: 'error'
+			});
+			console.log(alerts);
+			return;
+		}
 		//This adds the chosen roll to the chosenDice array
 		chosenDice = lodash.concat(chosenDice, chosenRoll);
 		//This removes the chosen roll from the diceRolls array
@@ -114,6 +161,7 @@
 		chosenDice = lodash.compact(chosenDice);
 		console.log(chosenDice);
 	}
+	// A function to confirm the chosen dice
 	function confirmChoice() {
 		// This adds the chosen dice to the confirmedDice array
 		confirmedDice = lodash.concat(confirmedDice, chosenDice);
