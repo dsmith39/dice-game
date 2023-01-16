@@ -32,7 +32,22 @@
 		choseWrongInput: false,
 		rollSuccess: false
 	};
-	let score = { totalScore: 0, onesScore: 0, fivesScore: 0 };
+	/**
+	 * @type {{totalScore: number, onesScore: number, fivesScore: number}} An Array that stores the user's potential score
+	 */
+	let potentialScore = {
+		totalScore: 0,
+		onesScore: 0,
+		fivesScore: 0
+	};
+	/**
+	 * @type {{totalScore: number, onesScore: number, fivesScore: number}} An Array that stores the user's chosen score
+	 */
+	let finalScore = {
+		totalScore: 0,
+		onesScore: 0,
+		fivesScore: 0
+	};
 	/**
 	 * ## Change Turn
 	 * @description **This is a function that changes the current turn. It also accumlates the number of total turns taken in the game so far**
@@ -113,16 +128,16 @@
 	function detectCrapout(array) {
 		let elementCount = 0;
 		array.forEach((element) => {
-			console.log(element);
 			if (element === 1 || element === 5) {
 				elementCount++;
 			}
 		});
 		if (elementCount > 0) {
 			alerts.crapout = false;
-		} else {
-			alerts.crapout = true;
 		}
+		// else {
+		// 	alerts.crapout = true;
+		// }
 	}
 	/**
 	 * ## Detect Flush
@@ -144,6 +159,27 @@
 		}
 	}
 	/**
+	 * ## Detect triple
+	 * @description **This is a function that detects if the user rolled a Straight**
+	 * @param {Array<Number>} array An array of the dice rolls
+	 */
+	function detectStraight(array) {
+		let tripArray = [];
+		let collection = lodash.countBy(array);
+		console.log('collection', collection);
+
+		for (let key in collection) {
+			if (collection[key] === 3) {
+				tripArray = lodash.fill(Array(3), parseInt(key));
+				chosenDice = lodash.concat(chosenDice, tripArray);
+				console.log('tripArray', tripArray);
+				alerts.crapout = false;
+				alerts.jackpot = false;
+			}
+		}
+		diceRolls = lodash.difference(diceRolls, tripArray);
+	}
+	/**
 	 * ## Handle Dice Roll
 	 * @description **This is a function that handles the dice roll, using `rollDice()`. It also checks if the dice roll is a Flush**
 	 * @param {number} diceNumber The number of dice to roll (1-5)
@@ -151,10 +187,11 @@
 	function handleDiceRoll(diceNumber) {
 		diceRolls = rollDice(diceNumber);
 		resetAlerts();
-		detectCrapout(diceRolls);
+		detectStraight(diceRolls);
 		detectFlush(diceRolls);
+		detectCrapout(diceRolls);
 		if (alerts.crapout === true) {
-			return;
+			retu;
 		}
 		alerts.rollSuccess = true;
 	}
@@ -169,6 +206,7 @@
 		 * @type {number} chosenRoll The dice roll that was clicked
 		 */
 		let chosenRoll = diceRolls[i];
+		//Dont allow the user to pick anything thats a 2, 3, 4, or 6
 		if (chosenRoll === 2 || chosenRoll === 3 || chosenRoll === 4 || chosenRoll === 6) {
 			alerts.choseWrongInput = true;
 			return;
@@ -179,11 +217,26 @@
 		lodash.pullAt(diceRolls, [i]);
 		//This removes any undefined values from the diceRolls array
 		diceRolls = lodash.compact(diceRolls);
+
+		if (chosenRoll === 1) {
+			potentialScore.onesScore += 100;
+			potentialScore.totalScore += 100;
+		} else if (chosenRoll === 5) {
+			potentialScore.fivesScore += 50;
+			potentialScore.totalScore += 50;
+		}
 	}
 	// A function to put numbers back in their original spot
 	function undoChoice(i) {
 		// this is the roll that was clicked
 		let chosenRoll = chosenDice[i];
+		if (chosenRoll === 1) {
+			potentialScore.onesScore -= 100;
+			potentialScore.totalScore -= 100;
+		} else if (chosenRoll === 5) {
+			potentialScore.fivesScore -= 50;
+			potentialScore.totalScore -= 50;
+		}
 		//This adds the chosen roll to the diceRolls array
 		diceRolls = lodash.concat(diceRolls, chosenRoll);
 		//This removes the chosen roll from the chosenDice array
@@ -191,27 +244,18 @@
 		//This removes any undefined values from the chosenDice array
 		chosenDice = lodash.compact(chosenDice);
 	}
-	//A function to reset the score
-	function resetScore() {
-		score.onesScore = 0;
-		score.fivesScore = 0;
-		score.totalScore = 0;
-	}
-	// A function to handle the score
-	function handleScore() {
-		if (alert.type === 'Crapout') {
-			resetScore();
-		}
-		for (let i = 0; i < confirmedDice.length; i++) {
-			if (confirmedDice[i] === 1) {
-				score.onesScore = score.onesScore + 100;
-				score.totalScore = score.totalScore + score.onesScore;
-			}
-			if (confirmedDice[i] === 5) {
-				score.fivesScore = score.fivesScore + 50;
-				score.totalScore = score.totalScore + score.fivesScore;
-			}
-		}
+
+	// A function to confirm the chosen dice
+	function confirmChoice() {
+		// This adds the chosen dice to the confirmedDice array
+		confirmedDice = lodash.concat(confirmedDice, chosenDice);
+		// This removes the chosen dice from the chosenDice array
+		chosenDice = [];
+		// This removes any undefined values from the confirmedDice array
+		confirmedDice = lodash.compact(confirmedDice);
+		finalScore.onesScore = potentialScore.onesScore;
+		finalScore.fivesScore = potentialScore.fivesScore;
+		finalScore.totalScore = potentialScore.totalScore;
 	}
 	// A function to undo the Confirm Choice and reset the chosenDice array
 	function undoConfirmChoice() {
@@ -221,16 +265,9 @@
 		confirmedDice = [];
 		// This removes any undefined values from the chosenDice array
 		chosenDice = lodash.compact(chosenDice);
-	}
-	// A function to confirm the chosen dice
-	function confirmChoice() {
-		// This adds the chosen dice to the confirmedDice array
-		confirmedDice = lodash.concat(confirmedDice, chosenDice);
-		// This removes the chosen dice from the chosenDice array
-		chosenDice = [];
-		// This removes any undefined values from the confirmedDice array
-		confirmedDice = lodash.compact(confirmedDice);
-		handleScore();
+		finalScore.onesScore = 0;
+		finalScore.fivesScore = 0;
+		finalScore.totalScore = 0;
 	}
 </script>
 
@@ -277,9 +314,8 @@
 	</article>
 {/if}
 
-<!-- Choose Dice Section -->
-<!-- Only show if there are  -->
-{#if chosenDice.length > 0}
+<!-- Chosen Dice Section -->
+{#if chosenDice.length > 0 && alerts.crapout === false}
 	<article>
 		<h2>Chosen Dice</h2>
 		<section class="diceSection">
@@ -294,10 +330,48 @@
 	</article>
 {/if}
 
+<!-- Show crapout -->
+{#if alerts.crapout === true}
+	<h3>You Crapped Out</h3>
+	<h3>Score: {finalScore.totalScore}</h3>
+	<button on:click|preventDefault={() => changeTurn()}>Submit Score and End turn</button>
+{/if}
+
+<!-- Show Jackpot -->
+{#if alerts.jackpot === true}
+	<p>You Hit the Jackpot</p>
+	<button on:click|preventDefault={() => changeTurn()}>Submit Score and End turn</button>
+{/if}
+
 <!-- Potential Score -->
-{#if confirmedDice.length > 0}
+{#if chosenDice.length > 0 && alerts.crapout === false}
 	<article>
 		<h2>Potential Score</h2>
+		<section>
+			<h3>Chosen Dice</h3>
+			<div class="diceSection">
+				{#each chosenDice as dice, i}
+					<p>{dice}</p>
+				{/each}
+			</div>
+		</section>
+		<section>
+			<h3>Score:</h3>
+			{#if potentialScore.onesScore > 0}
+				<p>Ones: {potentialScore.onesScore}</p>
+			{/if}
+			{#if potentialScore.fivesScore > 0}
+				<p>Fives: {potentialScore.fivesScore}</p>
+			{/if}
+			<p>Total: {potentialScore.totalScore}</p>
+		</section>
+	</article>
+{/if}
+
+<!-- Confirm Score Score -->
+{#if confirmedDice.length > 0 && alerts.crapout === false}
+	<article>
+		<h2>Confirm Score</h2>
 		<section>
 			<h3>Confirmed Dice</h3>
 			<div class="diceSection">
@@ -308,28 +382,20 @@
 		</section>
 		<section>
 			<h3>Score:</h3>
-			{#if score.onesScore > 0}
-				<p>Ones: {score.onesScore}</p>
+			{#if finalScore.onesScore > 0}
+				<p>Ones: {finalScore.onesScore}</p>
 			{/if}
-			{#if score.fivesScore > 0}
-				<p>Fives: {score.fivesScore}</p>
+			{#if finalScore.fivesScore > 0}
+				<p>Fives: {finalScore.fivesScore}</p>
 			{/if}
-			{#if score.totalScore > 0}
-				<p>Total Score: {score.totalScore}</p>
+			{#if finalScore.totalScore > 0}
+				<p>Total Score: {finalScore.totalScore}</p>
 			{/if}
 		</section>
 		<button on:click|preventDefault={() => undoConfirmChoice()}>Undo</button>
 		<button on:click|preventDefault={() => changeTurn()}>Submit Score and End turn</button>
 	</article>
 {/if}
-{#if alerts.crapout === true}
-	<h3>You Crapped Out</h3>
-	<h3>Score: {score.totalScore}</h3>
-{/if}
-{#if alerts.jackpot === true}
-	<p>You Hit the Jackpot</p>
-{/if}
-<!-- Messages -->
 
 <!-- Go To Next Turn -->
 <style>
@@ -338,8 +404,5 @@
 		flex-direction: row;
 		justify-content: space-evenly;
 		align-items: center;
-	}
-	.hidden {
-		display: none;
 	}
 </style>
