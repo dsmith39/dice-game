@@ -1,7 +1,6 @@
 <script>
 	// @ts-nocheck
 	import lodash from 'lodash';
-	import { object_without_properties } from 'svelte/internal';
 
 	/** The Game data that is fetched from the database */
 	export let data;
@@ -24,29 +23,34 @@
 	 */
 	let confirmedDice = [];
 	/**
-	 * @type {{jackpot: boolean, crapout: boolean, choseWrongInput: boolean, rollSuccess: boolean}} An Array that stores user feedback messages
+	 * @type {{jackpot: boolean, crapout: boolean, choseWrongInput: boolean, rollSuccess: boolean, triplet: boolean}} An Array that stores user feedback messages
 	 */
 	let alerts = {
 		jackpot: false,
 		crapout: false,
+		triplet: false,
 		choseWrongInput: false,
 		rollSuccess: false
 	};
 	/**
-	 * @type {{totalScore: number, onesScore: number, fivesScore: number}} An Array that stores the user's potential score
+	 * @type {{totalScore: number, onesScore: number, fivesScore: number, jackpot: number, triplet: number}} An Array that stores the user's potential score
 	 */
 	let potentialScore = {
 		totalScore: 0,
 		onesScore: 0,
-		fivesScore: 0
+		fivesScore: 0,
+		jackpot: 0,
+		triplet: 0
 	};
 	/**
-	 * @type {{totalScore: number, onesScore: number, fivesScore: number}} An Array that stores the user's chosen score
+	 * @type {{totalScore: number, onesScore: number, fivesScore: number, jackpot: number, triplet: number}} An Array that stores the user's chosen score
 	 */
 	let finalScore = {
 		totalScore: 0,
 		onesScore: 0,
-		fivesScore: 0
+		fivesScore: 0,
+		jackpot: 0,
+		triplet: 0
 	};
 	/**
 	 * ## Change Turn
@@ -117,7 +121,8 @@
 			jackpot: false,
 			crapout: false,
 			choseWrongInput: false,
-			rollSuccess: false
+			rollSuccess: false,
+			triplet: false
 		};
 	}
 	/**
@@ -126,18 +131,17 @@
 	 * @param {Array<Number>} array An array of the dice rolls
 	 */
 	function detectCrapout(array) {
-		let elementCount = 0;
-		array.forEach((element) => {
-			if (element === 1 || element === 5) {
-				elementCount++;
+		console.log('The Array That detectCrapout Uses: \n', array);
+		for (let i = 0; i < array.length; i++) {
+			if (array[i] === 1 || array[i] === 5) {
+				return false;
 			}
-		});
-		if (elementCount > 0) {
-			alerts.crapout = false;
 		}
-		// else {
-		// 	alerts.crapout = true;
-		// }
+		if (alerts.triplet === false) {
+			return false;
+		} else {
+			return true;
+		}
 	}
 	/**
 	 * ## Detect Flush
@@ -153,9 +157,11 @@
 			lodash.toString(sortedDiceRoll) === '1,2,3,4,5' ||
 			lodash.toString(sortedDiceRoll) === '2,3,4,5,6'
 		) {
-			alerts.crapout = false;
-			alerts.jackpot = true;
-			return;
+			chosenDice = lodash.concat(chosenDice, array);
+			diceRolls = lodash.difference(diceRolls, array);
+			potentialScore.jackpot = 750;
+			potentialScore.totalScore += potentialScore.jackpot;
+			return true;
 		}
 	}
 	/**
@@ -166,18 +172,43 @@
 	function detectStraight(array) {
 		let tripArray = [];
 		let collection = lodash.countBy(array);
-		console.log('collection', collection);
+		console.log('Triplet collection: \n', collection);
 
 		for (let key in collection) {
 			if (collection[key] === 3) {
 				tripArray = lodash.fill(Array(3), parseInt(key));
 				chosenDice = lodash.concat(chosenDice, tripArray);
-				console.log('tripArray', tripArray);
-				alerts.crapout = false;
-				alerts.jackpot = false;
+				console.log('tripArray: \n', tripArray);
+			} else if (collection[key] > 3) {
+				tripArray = lodash.fill(Array(3), parseInt(key));
+				chosenDice = lodash.concat(chosenDice, tripArray);
+				console.log('tripArray: \n', tripArray);
 			}
 		}
-		diceRolls = lodash.difference(diceRolls, tripArray);
+		if (tripArray.length > 0) {
+			diceRolls = lodash.difference(diceRolls, tripArray);
+			alerts.triplet = true;
+			alerts.crapout = false;
+		}
+		if (tripArray[0] === 1) {
+			potentialScore.triplet = 1000;
+			potentialScore.totalScore += potentialScore.triplet;
+		} else if (tripArray[0] === 2) {
+			potentialScore.triplet = 200;
+			potentialScore.totalScore += potentialScore.triplet;
+		} else if (tripArray[0] === 3) {
+			potentialScore.triplet = 300;
+			potentialScore.totalScore += potentialScore.triplet;
+		} else if (tripArray[0] === 4) {
+			potentialScore.triplet = 400;
+			potentialScore.totalScore += potentialScore.triplet;
+		} else if (tripArray[0] === 5) {
+			potentialScore.triplet = 500;
+			potentialScore.totalScore += potentialScore.triplet;
+		} else if (tripArray[0] === 6) {
+			potentialScore.triplet = 600;
+			potentialScore.totalScore += potentialScore.triplet;
+		}
 	}
 	/**
 	 * ## Handle Dice Roll
@@ -186,14 +217,16 @@
 	 */
 	function handleDiceRoll(diceNumber) {
 		diceRolls = rollDice(diceNumber);
-		resetAlerts();
-		detectStraight(diceRolls);
-		detectFlush(diceRolls);
-		detectCrapout(diceRolls);
+		alerts.crapout = false;
+		alerts.triple = false;
+
+		alerts.crapout = detectCrapout(diceRolls);
 		if (alerts.crapout === true) {
-			retu;
+			return;
 		}
-		alerts.rollSuccess = true;
+		detectStraight(diceRolls);
+		alerts.jackpot = detectFlush(diceRolls);
+		console.log('Crapout Status', alerts.crapout);
 	}
 	/**
 	 * ## Move To Chosen Dice
@@ -253,6 +286,8 @@
 		chosenDice = [];
 		// This removes any undefined values from the confirmedDice array
 		confirmedDice = lodash.compact(confirmedDice);
+		finalScore.triplet = potentialScore.triplet;
+		finalScore.jackpot = potentialScore.jackpot;
 		finalScore.onesScore = potentialScore.onesScore;
 		finalScore.fivesScore = potentialScore.fivesScore;
 		finalScore.totalScore = potentialScore.totalScore;
@@ -331,7 +366,7 @@
 {/if}
 
 <!-- Show crapout -->
-{#if alerts.crapout === true}
+{#if alerts.crapout}
 	<h3>You Crapped Out</h3>
 	<h3>Score: {finalScore.totalScore}</h3>
 	<button on:click|preventDefault={() => changeTurn()}>Submit Score and End turn</button>
@@ -357,6 +392,9 @@
 		</section>
 		<section>
 			<h3>Score:</h3>
+			{#if potentialScore.jackpot === true}
+				<p>Jackpot</p>
+			{/if}
 			{#if potentialScore.onesScore > 0}
 				<p>Ones: {potentialScore.onesScore}</p>
 			{/if}
