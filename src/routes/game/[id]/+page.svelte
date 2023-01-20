@@ -1,27 +1,27 @@
 <script>
 	// @ts-nocheck
+	import { enhance } from '$app/forms';
 	import lodash from 'lodash';
 
 	/** The Game data that is fetched from the database */
 	export let data;
 
-	//Statesdetect
+	//Setup States
 	/**
 	 * @type {number} **The Total Number of Turns Taken**
 	 * */
-	let totalTurns = 1;
+
+	let rollButtonDisabled = false;
+	let endTurnButtonDisabled = true;
 	/**
-	 * @type {Array<Number>} **An Array that stores what dice values the user rolls**
+	 * @type {number[]} **An Array that stores what dice values the user rolls**
 	 */
 	let diceRolls = [];
+	let tripArray = [];
 	/**
 	 * @type {Array<Number>} **An Array that stores what dice values the user chooses. The choice is made by selecting a value from the `diceRolls` array**
 	 */
 	let chosenDice = [];
-	/**
-	 * @type {Array<Number>} **An Array that stores what dice values the user confirms. The choice is made by confirming the values from the `chosenDice` array**
-	 */
-	let confirmedDice = [];
 	/**
 	 * @type {{jackpot: boolean, crapout: boolean, choseWrongInput: boolean, rollSuccess: boolean, triplet: boolean}} An Array that stores user feedback messages
 	 */
@@ -32,86 +32,94 @@
 		choseWrongInput: false,
 		rollSuccess: false
 	};
-	/**
-	 * @type {{totalScore: number, onesScore: number, fivesScore: number, jackpot: number, triplet: number}} An Array that stores the user's potential score
-	 */
-	let potentialScore = {
-		totalScore: 0,
-		onesScore: 0,
-		fivesScore: 0,
+	let score = {
+		ones: 0,
+		fives: 0,
+		triplet: 0,
 		jackpot: 0,
-		triplet: 0
+		totalScore: 0
 	};
-	/**
-	 * @type {{totalScore: number, onesScore: number, fivesScore: number, jackpot: number, triplet: number}} An Array that stores the user's chosen score
-	 */
-	let finalScore = {
-		totalScore: 0,
-		onesScore: 0,
-		fivesScore: 0,
-		jackpot: 0,
-		triplet: 0
-	};
+
 	/**
 	 * ## Change Turn
 	 * @description **This is a function that changes the current turn. It also accumlates the number of total turns taken in the game so far**
 	 * @returns {number} The current turn
 	 */
+	function resetData() {
+		//Reset the dice rolls
+		diceRolls = [];
+		//Reset the chosen dice
+		chosenDice = [];
+		//Reset the alerts
+		resetAlerts();
+		//Disable the end turn button
+		endTurnButtonDisabled = true;
+		//Enable the roll button
+		rollButtonDisabled = false;
+		// reset the score
+		score = {
+			ones: 0,
+			fives: 0,
+			triplet: 0,
+			jackpot: 0,
+			totalScore: 0
+		};
+	}
 	function changeTurn() {
-		data.game.currentTurn++;
-		totalTurns++;
-		// If the current turn is greater than the number of players, reset to 1
-		if (data.game.currentTurn > data.game.players.length) {
+		//Change the turn
+		data.game.currentTurn += 1;
+		//Accumulate the total number of turns
+		data.game.totalTurns += 1;
+		//Reset the dice rolls
+		if (data.game.currentTurn > data.game.playerNum) {
 			data.game.currentTurn = 1;
 		}
-		data.game.currentTurn;
-	}
-	/**
-	 * ## Roll Dice
-	 * @description **This is a function that rolls the dice and returns an array of the dice rolls**
-	 * @param {number} diceNumber The number of dice to roll (1-5)
-	 * @returns {number[]} An array of the dice rolls
-	 */
-	function rollDice(diceNumber) {
-		let dice1, dice2, dice3, dice4, dice5;
-		// If the diceNumber is 1, roll a single dice
-		if (diceNumber === 1) {
-			dice1 = Math.floor(Math.random() * 6) + 1;
-			diceRolls = [dice1];
-		}
-		// If the diceNumber is 2, roll two dice
-		if (diceNumber === 2) {
-			dice1 = Math.floor(Math.random() * 6) + 1;
-			dice2 = Math.floor(Math.random() * 6) + 1;
-			diceRolls = [dice1, dice2];
-		}
-		// If the diceNumber is 3, roll three dice
-		if (diceNumber === 3) {
-			dice1 = Math.floor(Math.random() * 6) + 1;
-			dice2 = Math.floor(Math.random() * 6) + 1;
-			dice3 = Math.floor(Math.random() * 6) + 1;
-			diceRolls = [dice1, dice2, dice3];
-		}
-		// If the diceNumber is 4, roll four dice
-		if (diceNumber === 4) {
-			dice1 = Math.floor(Math.random() * 6) + 1;
-			dice2 = Math.floor(Math.random() * 6) + 1;
-			dice3 = Math.floor(Math.random() * 6) + 1;
-			dice4 = Math.floor(Math.random() * 6) + 1;
-			diceRolls = [dice1, dice2, dice3, dice4];
-		}
-		// If the diceNumber is 5, roll five dice
-		if (diceNumber === 5) {
-			dice1 = Math.floor(Math.random() * 6) + 1;
-			dice2 = Math.floor(Math.random() * 6) + 1;
-			dice3 = Math.floor(Math.random() * 6) + 1;
-			dice4 = Math.floor(Math.random() * 6) + 1;
-			dice5 = Math.floor(Math.random() * 6) + 1;
-			diceRolls = [dice1, dice2, dice3, dice4, dice5];
-		}
-		return diceRolls;
 	}
 
+	function accumulateScore() {
+		data.game.players[data.game.currentTurn - 1].totalScore += score.totalScore;
+		console.log('The Submited Score: \n', data.game.players[data.game.currentTurn - 1].totalScore);
+	}
+	async function endTurn() {
+		//Accumulate the score
+		accumulateScore();
+		//Change the turn
+		changeTurn();
+		//save the game to the database
+		await fetch(`http://ec2-44-208-166-56.compute-1.amazonaws.com/games/${data.game.id}`, {
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				id: data.game.id,
+				playerNum: data.game.playerNum,
+				players: data.game.players,
+				currentTurn: data.game.currentTurn,
+				totalTurns: data.game.totalTurns
+			})
+		})
+			.then((res) => res.json())
+			.then((data) => {
+				console.log('Data Sent To Database', data);
+			});
+		//Change the turn
+		console.log("User's Data When End Turn Is Pressed \n", data);
+		resetData();
+	}
+	/**
+	 * ## Detect Crapout
+	 * @description **This is a function that detects if the user Crapped Out**
+	 * @param {Array<Number>} array An array of the dice rolls
+	 */
+	function detectCrapout(array) {
+		let collection = lodash.countBy(array);
+		//If there is no 1 or 5 key in the collection, then the user Crapped Out
+		if (!collection[1] && !collection[5]) {
+			return true;
+		}
+		return false;
+	}
 	/**
 	 * ## Reset Alerts
 	 * @description **This is a function that resets the alerts**
@@ -126,29 +134,11 @@
 		};
 	}
 	/**
-	 * ## Detect Crapout
-	 * @description **This is a function that detects if the user Crapped Out**
-	 * @param {Array<Number>} array An array of the dice rolls
-	 */
-	function detectCrapout(array) {
-		console.log('The Array That detectCrapout Uses: \n', array);
-		for (let i = 0; i < array.length; i++) {
-			if (array[i] === 1 || array[i] === 5) {
-				return false;
-			}
-		}
-		if (alerts.triplet === false) {
-			return false;
-		} else {
-			return true;
-		}
-	}
-	/**
 	 * ## Detect Flush
 	 * @description **This is a function that detects if the user rolled a Flush**
 	 * @param {Array<Number>} array An array of the dice rolls
 	 */
-	function detectFlush(array) {
+	function detectJackpot(array) {
 		//Sort Dice Rolls
 		let sortedDiceRoll = [...array].sort((a, b) => {
 			return a - b;
@@ -157,76 +147,37 @@
 			lodash.toString(sortedDiceRoll) === '1,2,3,4,5' ||
 			lodash.toString(sortedDiceRoll) === '2,3,4,5,6'
 		) {
-			chosenDice = lodash.concat(chosenDice, array);
-			diceRolls = lodash.difference(diceRolls, array);
-			potentialScore.jackpot = 750;
-			potentialScore.totalScore += potentialScore.jackpot;
 			return true;
 		}
+		return false;
 	}
 	/**
 	 * ## Detect triple
 	 * @description **This is a function that detects if the user rolled a Straight**
 	 * @param {Array<Number>} array An array of the dice rolls
 	 */
-	function detectStraight(array) {
-		let tripArray = [];
+	function detectTriplet(array) {
+		/**
+		 * @description **The Array of Triplets**
+		 * @type {string | lodash.List<any>}
+		 */
 		let collection = lodash.countBy(array);
 		console.log('Triplet collection: \n', collection);
 
 		for (let key in collection) {
 			if (collection[key] === 3) {
 				tripArray = lodash.fill(Array(3), parseInt(key));
-				chosenDice = lodash.concat(chosenDice, tripArray);
+				lodash.pullAll(array, tripArray);
 				console.log('tripArray: \n', tripArray);
+				return true;
 			} else if (collection[key] > 3) {
 				tripArray = lodash.fill(Array(3), parseInt(key));
-				chosenDice = lodash.concat(chosenDice, tripArray);
+				lodash.pullAll(array, tripArray.take(3));
 				console.log('tripArray: \n', tripArray);
+				return true;
 			}
 		}
-		if (tripArray.length > 0) {
-			diceRolls = lodash.difference(diceRolls, tripArray);
-			alerts.triplet = true;
-			alerts.crapout = false;
-		}
-		if (tripArray[0] === 1) {
-			potentialScore.triplet = 1000;
-			potentialScore.totalScore += potentialScore.triplet;
-		} else if (tripArray[0] === 2) {
-			potentialScore.triplet = 200;
-			potentialScore.totalScore += potentialScore.triplet;
-		} else if (tripArray[0] === 3) {
-			potentialScore.triplet = 300;
-			potentialScore.totalScore += potentialScore.triplet;
-		} else if (tripArray[0] === 4) {
-			potentialScore.triplet = 400;
-			potentialScore.totalScore += potentialScore.triplet;
-		} else if (tripArray[0] === 5) {
-			potentialScore.triplet = 500;
-			potentialScore.totalScore += potentialScore.triplet;
-		} else if (tripArray[0] === 6) {
-			potentialScore.triplet = 600;
-			potentialScore.totalScore += potentialScore.triplet;
-		}
-	}
-	/**
-	 * ## Handle Dice Roll
-	 * @description **This is a function that handles the dice roll, using `rollDice()`. It also checks if the dice roll is a Flush**
-	 * @param {number} diceNumber The number of dice to roll (1-5)
-	 */
-	function handleDiceRoll(diceNumber) {
-		diceRolls = rollDice(diceNumber);
-		alerts.crapout = false;
-		alerts.triple = false;
-
-		alerts.crapout = detectCrapout(diceRolls);
-		if (alerts.crapout === true) {
-			return;
-		}
-		detectStraight(diceRolls);
-		alerts.jackpot = detectFlush(diceRolls);
-		console.log('Crapout Status', alerts.crapout);
+		return false;
 	}
 	/**
 	 * ## Move To Chosen Dice
@@ -239,6 +190,7 @@
 		 * @type {number} chosenRoll The dice roll that was clicked
 		 */
 		let chosenRoll = diceRolls[i];
+		endTurnButtonDisabled = false;
 		//Dont allow the user to pick anything thats a 2, 3, 4, or 6
 		if (chosenRoll === 2 || chosenRoll === 3 || chosenRoll === 4 || chosenRoll === 6) {
 			alerts.choseWrongInput = true;
@@ -252,23 +204,29 @@
 		diceRolls = lodash.compact(diceRolls);
 
 		if (chosenRoll === 1) {
-			potentialScore.onesScore += 100;
-			potentialScore.totalScore += 100;
+			score.onesScore += 100;
+			score.totalScore += 100;
 		} else if (chosenRoll === 5) {
-			potentialScore.fivesScore += 50;
-			potentialScore.totalScore += 50;
+			score.fivesScore += 50;
+			score.totalScore += 50;
 		}
 	}
 	// A function to put numbers back in their original spot
+	/**
+	 * @param {number} i **The index of the chosen dice roll in the chosenDice array**
+	 */
 	function undoChoice(i) {
 		// this is the roll that was clicked
+		if (alerts.crapout === true) {
+			return;
+		}
 		let chosenRoll = chosenDice[i];
 		if (chosenRoll === 1) {
-			potentialScore.onesScore -= 100;
-			potentialScore.totalScore -= 100;
+			score.onesScore -= 100;
+			score.totalScore -= 100;
 		} else if (chosenRoll === 5) {
-			potentialScore.fivesScore -= 50;
-			potentialScore.totalScore -= 50;
+			score.fivesScore -= 50;
+			score.totalScore -= 50;
 		}
 		//This adds the chosen roll to the diceRolls array
 		diceRolls = lodash.concat(diceRolls, chosenRoll);
@@ -277,170 +235,240 @@
 		//This removes any undefined values from the chosenDice array
 		chosenDice = lodash.compact(chosenDice);
 	}
-
-	// A function to confirm the chosen dice
-	function confirmChoice() {
-		// This adds the chosen dice to the confirmedDice array
-		confirmedDice = lodash.concat(confirmedDice, chosenDice);
-		// This removes the chosen dice from the chosenDice array
-		chosenDice = [];
-		// This removes any undefined values from the confirmedDice array
-		confirmedDice = lodash.compact(confirmedDice);
-		finalScore.triplet = potentialScore.triplet;
-		finalScore.jackpot = potentialScore.jackpot;
-		finalScore.onesScore = potentialScore.onesScore;
-		finalScore.fivesScore = potentialScore.fivesScore;
-		finalScore.totalScore = potentialScore.totalScore;
-	}
-	// A function to undo the Confirm Choice and reset the chosenDice array
-	function undoConfirmChoice() {
-		// This add the chosen dice back into the chosenDice array
-		chosenDice = lodash.concat(chosenDice, confirmedDice);
-		// This removes the chosen dice from the confirmedDice array
-		confirmedDice = [];
-		// This removes any undefined values from the chosenDice array
-		chosenDice = lodash.compact(chosenDice);
-		finalScore.onesScore = 0;
-		finalScore.fivesScore = 0;
-		finalScore.totalScore = 0;
+	/**
+	 * ## Roll Dice
+	 * @description **This is a function that rolls the dice and returns an array of the dice rolls**
+	 * @param {number} diceNumber The number of dice to roll (1-5)
+	 * @returns {number[]} An array of the dice rolls
+	 */
+	function rollDice(diceNumber) {
+		console.clear();
+		let dice1, dice2, dice3, dice4, dice5;
+		/**
+		 * @type {number[]} **An Array that stores what dice values the user rolls*
+		 */
+		resetAlerts();
+		// If the diceNumber is 1, roll a single dice
+		if (diceNumber === 1) {
+			dice1 = Math.floor(Math.random() * 6) + 1;
+			diceRolls = [dice1];
+		}
+		// If the diceNumber is 2, roll two dice
+		else if (diceNumber === 2) {
+			dice1 = Math.floor(Math.random() * 6) + 1;
+			dice2 = Math.floor(Math.random() * 6) + 1;
+			diceRolls = [dice1, dice2];
+		}
+		// If the diceNumber is 3, roll three dice
+		else if (diceNumber === 3) {
+			dice1 = Math.floor(Math.random() * 6) + 1;
+			dice2 = Math.floor(Math.random() * 6) + 1;
+			dice3 = Math.floor(Math.random() * 6) + 1;
+			diceRolls = [dice1, dice2, dice3];
+		}
+		// If the diceNumber is 4, roll four dice
+		else if (diceNumber === 4) {
+			dice1 = Math.floor(Math.random() * 6) + 1;
+			dice2 = Math.floor(Math.random() * 6) + 1;
+			dice3 = Math.floor(Math.random() * 6) + 1;
+			dice4 = Math.floor(Math.random() * 6) + 1;
+			diceRolls = [dice1, dice2, dice3, dice4];
+		}
+		// If the diceNumber is 5, roll five dice
+		else if (diceNumber === 5) {
+			dice1 = Math.floor(Math.random() * 6) + 1;
+			dice2 = Math.floor(Math.random() * 6) + 1;
+			dice3 = Math.floor(Math.random() * 6) + 1;
+			dice4 = Math.floor(Math.random() * 6) + 1;
+			dice5 = Math.floor(Math.random() * 6) + 1;
+			diceRolls = [dice1, dice2, dice3, dice4, dice5];
+		}
+		console.log('diceRolls: \n', diceRolls);
+		if (detectTriplet(diceRolls) === true) {
+			if (tripArray[0] === 1) {
+				score.triplet = 1000;
+				score.totalScore += score.triplet;
+			} else if (tripArray[0] === 2) {
+				score.triplet = 200;
+				score.totalScore += score.triplet;
+			} else if (tripArray[0] === 3) {
+				score.triplet = 300;
+				score.totalScore += score.triplet;
+			} else if (tripArray[0] === 4) {
+				score.triplet = 400;
+				score.totalScore += score.triplet;
+			} else if (tripArray[0] === 5) {
+				score.triplet = 500;
+				score.totalScore += score.triplet;
+			} else if (tripArray[0] === 6) {
+				score.triplet = 600;
+				score.totalScore += score.triplet;
+			}
+			console.log('Triplet!');
+			alerts.triplet = true;
+			endTurnButtonDisabled = false;
+			return;
+		}
+		if (detectCrapout(diceRolls) === true) {
+			console.log('Crapout!');
+			score.totalScore = 0;
+			alerts.crapout = true;
+			rollButtonDisabled = true;
+			endTurnButtonDisabled = false;
+			return;
+		}
+		if (detectJackpot(diceRolls) === true) {
+			console.log('Jackpot!');
+			score.jackpot += 750;
+			score.totalScore += score.jackpot;
+			alerts.jackpot = true;
+			return;
+		}
+		console.log('Data At Time of Dice Roll: \n', data);
 	}
 </script>
 
-<!-- The Player Information Box -->
-<article>
-	<p>Turn: {totalTurns}</p>
-	<p>Player: {data.game.players[data.game.currentTurn - 1].nickname}</p>
-	<p>Round Score: {data.game.players[data.game.currentTurn - 1].currentScore}</p>
-	<p>Total Score: {data.game.players[data.game.currentTurn - 1].totalScore}</p>
-</article>
-
-<!-- Dice Rolling Section -->
-{#if confirmedDice.length === 0}
-	<article>
-		<h2>Dice Roll</h2>
-		<section class="diceSection">
-			{#each diceRolls as dice, i}
-				<!-- svelte-ignore a11y-click-events-have-key-events -->
-				<div on:click={() => moveToChosenDice(i)}>
-					{dice}
-				</div>
-			{/each}
-		</section>
-		{#if alerts.crapout === false}
-			{#if diceRolls.length === 4}
-				<button on:click|preventDefault={() => handleDiceRoll(4)}>Roll 4 Dice</button>
-			{/if}
-			{#if diceRolls.length === 3}
-				<button on:click|preventDefault={() => handleDiceRoll(3)}>Roll 3 Dice</button>
-			{/if}
-			{#if diceRolls.length === 2}
-				<button on:click|preventDefault={() => handleDiceRoll(2)}>Roll 2 Dice</button>
-			{/if}
-			{#if diceRolls.length === 1}
-				<button on:click|preventDefault={() => handleDiceRoll(1)}>Roll 1 Dice</button>
-			{/if}
-			{#if diceRolls.length === 0}
-				<button on:click|preventDefault={() => handleDiceRoll(5)}>Roll</button>
-			{/if}
-			{#if diceRolls.length === 5}
-				<button on:click|preventDefault={() => handleDiceRoll(5)}>Roll 5 Dice</button>
-			{/if}
+<main class="container">
+	<!-- Display Alerts -->
+	<article class="alertSection">
+		{#if alerts.crapout === true}
+			<h2>Sorry You Crapped Out...</h2>
+			<div class="diceSection">
+				{#each diceRolls as dice, i}
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
+					<p>{dice}</p>
+				{/each}
+			</div>
 		{/if}
-	</article>
-{/if}
 
-<!-- Chosen Dice Section -->
-{#if chosenDice.length > 0 && alerts.crapout === false}
-	<article>
-		<h2>Chosen Dice</h2>
-		<section class="diceSection">
-			{#each chosenDice as dice, i}
-				<!-- svelte-ignore a11y-click-events-have-key-events -->
-				<div on:click={() => undoChoice(i)}>
-					{dice}
-				</div>
-			{/each}
-		</section>
-		<button on:click|preventDefault={() => confirmChoice()}>Save These Dice</button>
-	</article>
-{/if}
+		<!-- Display Dice Roll -->
+		{#if diceRolls.length > 0 && alerts.crapout === false}
+			<h2>Your Roll</h2>
+			<div class="diceSection">
+				{#each diceRolls as dice, i}
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
+					<p on:click|preventDefault={() => moveToChosenDice(i)}>{dice}</p>
+				{/each}
+			</div>
+		{/if}
+		{#if alerts.triplet === true && alerts.crapout === false}
+			<h2>Triplet!</h2>
+			<div class="diceSection">
+				{#each tripArray as dice, i}
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
+					<p>{dice}</p>
+				{/each}
+			</div>
+		{/if}
+		{#if alerts.jackpot === true && alerts.crapout === false}
+			<h2>Jackpot!</h2>
+		{/if}
 
-<!-- Show crapout -->
-{#if alerts.crapout}
-	<h3>You Crapped Out</h3>
-	<h3>Score: {finalScore.totalScore}</h3>
-	<button on:click|preventDefault={() => changeTurn()}>Submit Score and End turn</button>
-{/if}
-
-<!-- Show Jackpot -->
-{#if alerts.jackpot === true}
-	<p>You Hit the Jackpot</p>
-	<button on:click|preventDefault={() => changeTurn()}>Submit Score and End turn</button>
-{/if}
-
-<!-- Potential Score -->
-{#if chosenDice.length > 0 && alerts.crapout === false}
-	<article>
-		<h2>Potential Score</h2>
-		<section>
-			<h3>Chosen Dice</h3>
+		<!-- Dice Selection Section -->
+		{#if chosenDice.length > 0}
+			<h2>Selected Dice</h2>
 			<div class="diceSection">
 				{#each chosenDice as dice, i}
-					<p>{dice}</p>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
+					<p on:click|preventDefault={() => undoChoice(i)}>{dice}</p>
 				{/each}
 			</div>
-		</section>
-		<section>
-			<h3>Score:</h3>
-			{#if potentialScore.jackpot === true}
-				<p>Jackpot</p>
-			{/if}
-			{#if potentialScore.onesScore > 0}
-				<p>Ones: {potentialScore.onesScore}</p>
-			{/if}
-			{#if potentialScore.fivesScore > 0}
-				<p>Fives: {potentialScore.fivesScore}</p>
-			{/if}
-			<p>Total: {potentialScore.totalScore}</p>
-		</section>
-	</article>
-{/if}
-
-<!-- Confirm Score Score -->
-{#if confirmedDice.length > 0 && alerts.crapout === false}
-	<article>
-		<h2>Confirm Score</h2>
-		<section>
-			<h3>Confirmed Dice</h3>
+		{:else if chosenDice.length > 0 && alerts.crapout === false}
+			<h2>Selected Dice</h2>
 			<div class="diceSection">
-				{#each confirmedDice as dice, i}
+				{#each chosenDice as dice, i}
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<p>{dice}</p>
 				{/each}
 			</div>
-		</section>
-		<section>
-			<h3>Score:</h3>
-			{#if finalScore.onesScore > 0}
-				<p>Ones: {finalScore.onesScore}</p>
-			{/if}
-			{#if finalScore.fivesScore > 0}
-				<p>Fives: {finalScore.fivesScore}</p>
-			{/if}
-			{#if finalScore.totalScore > 0}
-				<p>Total Score: {finalScore.totalScore}</p>
-			{/if}
-		</section>
-		<button on:click|preventDefault={() => undoConfirmChoice()}>Undo</button>
-		<button on:click|preventDefault={() => changeTurn()}>Submit Score and End turn</button>
+		{/if}
 	</article>
-{/if}
+	<!-- The Player Information Box -->
+	<article class="infoBox">
+		<p>Turn: {data.game.totalTurns}</p>
+		<p>Player: {data.game.players[data.game.currentTurn - 1].nickname}</p>
+		<p>Round Score: {score.totalScore}</p>
+		<p>Game Score: {data.game.players[data.game.currentTurn - 1].totalScore}</p>
+		<!-- Dice Rolling Button -->
+		{#if diceRolls.length === 0}
+			<button class="rollDiceButton" disabled={rollButtonDisabled} on:click={() => rollDice(5)}
+				>Roll Dice</button
+			>
+		{:else if diceRolls.length === 1}
+			<button class="rollDiceButton" disabled={rollButtonDisabled} on:click={() => rollDice(1)}
+				>Roll Again</button
+			>
+		{:else if diceRolls.length === 2}
+			<button class="rollDiceButton" disabled={rollButtonDisabled} on:click={() => rollDice(2)}
+				>Roll Again</button
+			>
+		{:else if diceRolls.length === 3}
+			<button class="rollDiceButton" disabled={rollButtonDisabled} on:click={() => rollDice(3)}
+				>Roll Again</button
+			>
+		{:else if diceRolls.length === 4}
+			<button class="rollDiceButton" disabled={rollButtonDisabled} on:click={() => rollDice(4)}
+				>Roll Again</button
+			>
+		{:else if diceRolls.length === 5}
+			<button class="rollDiceButton" disabled={rollButtonDisabled} on:click={() => rollDice(5)}
+				>Roll Again</button
+			>
+		{/if}
+		<!-- End Turn Button -->
 
-<!-- Go To Next Turn -->
+		<button
+			class="endTurnButton"
+			disabled={endTurnButtonDisabled}
+			on:click|preventDefault={() => endTurn()}>End Turn</button
+		>
+	</article>
+</main>
+
 <style>
+	.infoBox,
+	.alertSection {
+		position: absolute;
+	}
+	.infoBox {
+		top: 0;
+		right: 0;
+		/* position in the center */
+		transform: translate(0, 30vh);
+		margin-right: 25vw;
+	}
+	.alertSection {
+		top: 0;
+		left: 0;
+		transform: translate(0, 30vh);
+		margin-left: 25vw;
+	}
+	.rollDiceButton,
+	.endTurnButton {
+		height: 3rem;
+		width: 10rem;
+		font-size: 1.5rem;
+		display: block;
+		margin-top: 2rem;
+	}
 	.diceSection {
 		display: flex;
 		flex-direction: row;
-		justify-content: space-evenly;
+		justify-content: center;
 		align-items: center;
+		gap: 1rem;
+		position: relative;
+		margin-bottom: 2rem;
+	}
+	.diceSection p {
+		font-size: 2rem;
+	}
+	.diceSection p:hover {
+		cursor: pointer;
+	}
+	h2 {
+		font-size: 2rem;
+		text-decoration: underline;
+		margin-bottom: 1rem;
 	}
 </style>

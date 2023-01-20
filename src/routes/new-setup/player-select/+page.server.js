@@ -7,11 +7,10 @@ export const actions = {
 		const data = await event.request.formData();
 		let playerNum = data.get('playerChoice');
 		let players = [];
-		for (let i = 0; i < playerNum; i++) {
+		for (let i = 0; i <= playerNum; i++) {
 			players.push({
 				nickname: data.get(`player${i}`),
-				turnOrder: i + 1,
-				currentScore: 0,
+				turnIndex: i,
 				totalScore: 0
 			});
 			let playerID = uuidv4();
@@ -34,7 +33,8 @@ export const actions = {
 			id: gameID,
 			playerNum: playerNum,
 			players: players,
-			currentTurn: 1
+			currentTurn: 1,
+			totalTurns: 1
 		};
 		await fetch(`http://ec2-44-208-166-56.compute-1.amazonaws.com/games`, {
 			method: 'POST',

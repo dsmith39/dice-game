@@ -9,3 +9,9 @@ export async function load({ fetch, params }) {
 		game: game[0]
 	};
 }
+export const actions = {
+	default: async (event) => {
+		const data = await event.request.formData();
+		console.log(data);
+	}
+};
