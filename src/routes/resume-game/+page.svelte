@@ -9,7 +9,7 @@
 {#each data.games as game}
 	<div>
 		<h2>A {game.playerNum} player game</h2>
-		<h3>On Turn {game.totalTurns + 1}</h3>
+		<h3>On Turn {game.totalTurns}</h3>
 		<h3>The Players are:</h3>
 		{#each game.players as player}
 			<p>

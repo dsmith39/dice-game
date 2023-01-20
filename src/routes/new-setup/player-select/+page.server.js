@@ -7,7 +7,7 @@ export const actions = {
 		const data = await event.request.formData();
 		let playerNum = data.get('playerChoice');
 		let players = [];
-		for (let i = 0; i <= playerNum; i++) {
+		for (let i = 0; i < playerNum; i++) {
 			players.push({
 				nickname: data.get(`player${i}`),
 				turnIndex: i,
