@@ -24,7 +24,7 @@ export const actions = {
 	 * **resume-game** action
 	 * @param {*} event
 	 */
-	default: async (event) => {
+	resume: async (event) => {
 		event.preventDefault;
 		const data = await event.request.formData();
 		let gameID = data.get('gameID');
@@ -32,5 +32,23 @@ export const actions = {
 		// return {
 		// 	success: true,
 		// };
+	},
+	/**
+	 * ## resume-game
+	 * **resume-game** action
+	 * @param {*} event
+	 */
+	delete: async (event) => {
+		event.preventDefault;
+		const data = await event.request.formData();
+		let gameID = data.get('gameID');
+		await fetch(`http://ec2-44-208-166-56.compute-1.amazonaws.com/games/${gameID}`, {
+			method: 'DELETE',
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+
+		throw redirect(301, `/game/manage`);
 	}
 };

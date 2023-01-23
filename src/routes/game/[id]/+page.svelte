@@ -172,7 +172,7 @@
 				return true;
 			} else if (collection[key] > 3) {
 				tripArray = lodash.fill(Array(3), parseInt(key));
-				lodash.pullAll(array, tripArray.take(3));
+				lodash.pullAll(array, tripArray.lodash.take(3));
 				console.log('tripArray: \n', tripArray);
 				return true;
 			}
@@ -189,6 +189,9 @@
 		/**
 		 * @type {number} chosenRoll The dice roll that was clicked
 		 */
+		if (detectJackpot(diceRolls) === true) {
+			return;
+		}
 		let chosenRoll = diceRolls[i];
 		endTurnButtonDisabled = false;
 		//Dont allow the user to pick anything thats a 2, 3, 4, or 6

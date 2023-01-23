@@ -16,9 +16,13 @@
 				{player.nickname} (Score: {player.totalScore})
 			</p>
 		{/each}
-		<form method="POST" use:enhance>
+		<form method="POST" action="?/resume" use:enhance>
 			<input type="hidden" name="gameID" value={game.id} />
 			<button type="submit">Resume Game</button>
+		</form>
+		<form method="POST" action="?/delete" use:enhance>
+			<input type="hidden" name="gameID" value={game.id} />
+			<button type="submit">Delete Game</button>
 		</form>
 	</div>
 {/each}
@@ -33,7 +37,7 @@
 		flex-direction: column;
 		align-items: center;
 		border: 1px solid black;
-		padding: 1rem 1rem 0 1rem;
+		padding: 1rem 1rem 1rem 1rem;
 		margin: 1rem 0 1rem 0;
 	}
 	.gameInfo h2 {
@@ -53,10 +57,6 @@
 		margin: 0 0 0.25rem 0;
 	}
 	.gameInfo form {
-		margin: 0 0 3rem 0;
-	}
-	.gameInfo button {
-		font-size: 1.25rem;
-		margin: 3rem 0 0 0;
+		margin: 1rem 0 0 0;
 	}
 </style>
