@@ -1,7 +1,7 @@
 <h1>The<br />Dice<br />Game</h1>
 <section>
-	<a href="/new-setup/player-select">Start New Game</a>
-	<a href="/manage-games">Saved Games</a>
+	<a href="/game/new">Start New Game</a>
+	<a href="/game/manage">Saved Games</a>
 </section>
 
 <style>
