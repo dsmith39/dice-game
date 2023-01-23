@@ -1,7 +1,13 @@
 <script>
 	// @ts-nocheck
-	import { enhance } from '$app/forms';
 	import lodash from 'lodash';
+	//import dice images
+	import dice1 from '$lib/assets/dice1.svg';
+	import dice2 from '$lib/assets/dice2.svg';
+	import dice3 from '$lib/assets/dice3.svg';
+	import dice4 from '$lib/assets/dice4.svg';
+	import dice5 from '$lib/assets/dice5.svg';
+	import dice6 from '$lib/assets/dice6.svg';
 
 	/** The Game data that is fetched from the database */
 	export let data;
@@ -22,6 +28,7 @@
 	 * @type {Array<Number>} **An Array that stores what dice values the user chooses. The choice is made by selecting a value from the `diceRolls` array**
 	 */
 	let chosenDice = [];
+	let gameOver = false;
 	/**
 	 * @type {{jackpot: boolean, crapout: boolean, choseWrongInput: boolean, rollSuccess: boolean, triplet: boolean}} An Array that stores user feedback messages
 	 */
@@ -80,32 +87,19 @@
 		data.game.players[data.game.currentTurn - 1].totalScore += score.totalScore;
 		console.log('The Submited Score: \n', data.game.players[data.game.currentTurn - 1].totalScore);
 	}
-	async function endTurn() {
-		//Accumulate the score
-		accumulateScore();
-		//Change the turn
-		changeTurn();
-		//save the game to the database
-		await fetch(`http://ec2-44-208-166-56.compute-1.amazonaws.com/games/${data.game.id}`, {
-			method: 'PUT',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				id: data.game.id,
-				playerNum: data.game.playerNum,
-				players: data.game.players,
-				currentTurn: data.game.currentTurn,
-				totalTurns: data.game.totalTurns
-			})
-		})
-			.then((res) => res.json())
-			.then((data) => {
-				console.log('Data Sent To Database', data);
-			});
-		//Change the turn
-		console.log("User's Data When End Turn Is Pressed \n", data);
-		resetData();
+
+	/**
+	 * ## Reset Alerts
+	 * @description **This is a function that resets the alerts**
+	 */
+	function resetAlerts() {
+		alerts = {
+			jackpot: false,
+			crapout: false,
+			choseWrongInput: false,
+			rollSuccess: false,
+			triplet: false
+		};
 	}
 	/**
 	 * ## Detect Crapout
@@ -119,19 +113,6 @@
 			return true;
 		}
 		return false;
-	}
-	/**
-	 * ## Reset Alerts
-	 * @description **This is a function that resets the alerts**
-	 */
-	function resetAlerts() {
-		alerts = {
-			jackpot: false,
-			crapout: false,
-			choseWrongInput: false,
-			rollSuccess: false,
-			triplet: false
-		};
 	}
 	/**
 	 * ## Detect Flush
@@ -329,103 +310,230 @@
 		}
 		console.log('Data At Time of Dice Roll: \n', data);
 	}
+	/**
+	 * ## End Turn
+	 * @description **Ends the Turn and performs ending functions**
+	 * @returns {boolean} Returns true if the dice roll is a triplet
+	 */
+	async function endTurn() {
+		//Accumulate the score
+		accumulateScore();
+		//Check if the User's Score now totals 10,000
+		if (data.game.players[data.game.currentTurn - 1].totalScore >= 10000) {
+			//If the User's Score is 10,000 or more, end the game
+			endGame();
+			return;
+		}
+		//Change the turn
+		changeTurn();
+		//save the game to the database
+		await fetch(`http://ec2-44-208-166-56.compute-1.amazonaws.com/games/${data.game.id}`, {
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				id: data.game.id,
+				playerNum: data.game.playerNum,
+				players: data.game.players,
+				currentTurn: data.game.currentTurn,
+				totalTurns: data.game.totalTurns
+			})
+		})
+			.then((res) => res.json())
+			.then((data) => {
+				console.log('Data Sent To Database', data);
+			});
+		//Change the turn
+		console.log("User's Data When End Turn Is Pressed \n", data);
+		resetData();
+	}
+	/**
+	 * ## End Game
+	 * @description **Ends Game once someone has reached 10,000 score**
+	 * @returns {void} Returns nothing
+	 */
+	async function endGame() {
+		gameOver = true;
+		await fetch(`http://ec2-44-208-166-56.compute-1.amazonaws.com/games/${data.game.id}`, {
+			method: 'DELETE',
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		})
+			.then((res) => res.json())
+			.then((data) => {
+				console.log('Data Sent To Database', data);
+			});
+	}
 </script>
 
 <main class="container">
 	<!-- Display Alerts -->
 	<article class="alertSection">
-		{#if alerts.crapout === true}
+		{#if alerts.crapout === true && gameOver === false}
 			<h2>Sorry You Crapped Out...</h2>
 			<div class="diceSection">
 				{#each diceRolls as dice, i}
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<p>{dice}</p>
+					{#if dice === 1}
+						<img src={dice1} alt="Dice 1" />
+					{:else if dice === 2}
+						<img src={dice2} alt="Dice 2" />
+					{:else if dice === 3}
+						<img src={dice3} alt="Dice 3" />
+					{:else if dice === 4}
+						<img src={dice4} alt="Dice 4" />
+					{:else if dice === 5}
+						<img src={dice5} alt="Dice 5" />
+					{:else if dice === 6}
+						<img src={dice6} alt="Dice 6" />
+					{/if}
 				{/each}
 			</div>
 		{/if}
 
 		<!-- Display Dice Roll -->
-		{#if diceRolls.length > 0 && alerts.crapout === false}
+		{#if diceRolls.length > 0 && alerts.crapout === false && gameOver === false}
 			<h2>Your Roll</h2>
 			<div class="diceSection">
 				{#each diceRolls as dice, i}
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<p on:click|preventDefault={() => moveToChosenDice(i)}>{dice}</p>
+					{#if dice === 1}
+						<img src={dice1} alt="Dice 1" on:click|preventDefault={() => moveToChosenDice(i)} />
+					{:else if dice === 2}
+						<img src={dice2} alt="Dice 2" on:click|preventDefault={() => moveToChosenDice(i)} />
+					{:else if dice === 3}
+						<img src={dice3} alt="Dice 3" on:click|preventDefault={() => moveToChosenDice(i)} />
+					{:else if dice === 4}
+						<img src={dice4} alt="Dice 4" on:click|preventDefault={() => moveToChosenDice(i)} />
+					{:else if dice === 5}
+						<img src={dice5} alt="Dice 5" on:click|preventDefault={() => moveToChosenDice(i)} />
+					{:else if dice === 6}
+						<img src={dice6} alt="Dice 6" on:click|preventDefault={() => moveToChosenDice(i)} />
+					{/if}
 				{/each}
 			</div>
 		{/if}
-		{#if alerts.triplet === true && alerts.crapout === false}
+		{#if alerts.triplet === true && alerts.crapout === false && gameOver === false}
 			<h2>Triplet!</h2>
 			<div class="diceSection">
 				{#each tripArray as dice, i}
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<p>{dice}</p>
+					{#if dice === 1}
+						<img src={dice1} alt="Dice 1" />
+					{:else if dice === 2}
+						<img src={dice2} alt="Dice 2" />
+					{:else if dice === 3}
+						<img src={dice3} alt="Dice 3" />
+					{:else if dice === 4}
+						<img src={dice4} alt="Dice 4" />
+					{:else if dice === 5}
+						<img src={dice5} alt="Dice 5" />
+					{:else if dice === 6}
+						<img src={dice6} alt="Dice 6" />
+					{/if}
 				{/each}
 			</div>
 		{/if}
-		{#if alerts.jackpot === true && alerts.crapout === false}
+		{#if alerts.jackpot === true && alerts.crapout === false && gameOver === false}
 			<h2>Jackpot!</h2>
 		{/if}
 
 		<!-- Dice Selection Section -->
-		{#if chosenDice.length > 0}
+		{#if chosenDice.length > 0 && gameOver === false}
 			<h2>Selected Dice</h2>
 			<div class="diceSection">
 				{#each chosenDice as dice, i}
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<p on:click|preventDefault={() => undoChoice(i)}>{dice}</p>
+					{#if dice === 1}
+						<img src={dice1} alt="Dice 1" on:click|preventDefault={() => undoChoice(i)} />
+					{:else if dice === 2}
+						<img src={dice2} alt="Dice 2" on:click|preventDefault={() => undoChoice(i)} />
+					{:else if dice === 3}
+						<img src={dice3} alt="Dice 3" on:click|preventDefault={() => undoChoice(i)} />
+					{:else if dice === 4}
+						<img src={dice4} alt="Dice 4" on:click|preventDefault={() => undoChoice(i)} />
+					{:else if dice === 5}
+						<img src={dice5} alt="Dice 5" on:click|preventDefault={() => undoChoice(i)} />
+					{:else if dice === 6}
+						<img src={dice6} alt="Dice 6" on:click|preventDefault={() => undoChoice(i)} />
+					{/if}
 				{/each}
 			</div>
-		{:else if chosenDice.length > 0 && alerts.crapout === false}
+		{:else if chosenDice.length > 0 && alerts.crapout === false && gameOver === false}
 			<h2>Selected Dice</h2>
 			<div class="diceSection">
 				{#each chosenDice as dice, i}
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<p>{dice}</p>
+					{#if dice === 1}
+						<img src={dice1} alt="Dice 1" />
+					{:else if dice === 2}
+						<img src={dice2} alt="Dice 2" />
+					{:else if dice === 3}
+						<img src={dice3} alt="Dice 3" />
+					{:else if dice === 4}
+						<img src={dice4} alt="Dice 4" />
+					{:else if dice === 5}
+						<img src={dice5} alt="Dice 5" />
+					{:else if dice === 6}
+						<img src={dice6} alt="Dice 6" />
+					{/if}
 				{/each}
 			</div>
 		{/if}
 	</article>
 	<!-- The Player Information Box -->
-	<article class="infoBox">
-		<p>Turn: {data.game.totalTurns}</p>
-		<p>Player: {data.game.players[data.game.currentTurn - 1].nickname}</p>
-		<p>Round Score: {score.totalScore}</p>
-		<p>Game Score: {data.game.players[data.game.currentTurn - 1].totalScore}</p>
-		<!-- Dice Rolling Button -->
-		{#if diceRolls.length === 0}
-			<button class="rollDiceButton" disabled={rollButtonDisabled} on:click={() => rollDice(5)}
-				>Roll Dice</button
-			>
-		{:else if diceRolls.length === 1}
-			<button class="rollDiceButton" disabled={rollButtonDisabled} on:click={() => rollDice(1)}
-				>Roll Again</button
-			>
-		{:else if diceRolls.length === 2}
-			<button class="rollDiceButton" disabled={rollButtonDisabled} on:click={() => rollDice(2)}
-				>Roll Again</button
-			>
-		{:else if diceRolls.length === 3}
-			<button class="rollDiceButton" disabled={rollButtonDisabled} on:click={() => rollDice(3)}
-				>Roll Again</button
-			>
-		{:else if diceRolls.length === 4}
-			<button class="rollDiceButton" disabled={rollButtonDisabled} on:click={() => rollDice(4)}
-				>Roll Again</button
-			>
-		{:else if diceRolls.length === 5}
-			<button class="rollDiceButton" disabled={rollButtonDisabled} on:click={() => rollDice(5)}
-				>Roll Again</button
-			>
-		{/if}
-		<!-- End Turn Button -->
+	{#if gameOver === false}
+		<article class="infoBox">
+			<p>Turn: {data.game.totalTurns}</p>
+			<p>Player: {data.game.players[data.game.currentTurn - 1].nickname}</p>
+			<p>Round Score: {score.totalScore}</p>
+			<p>Game Score: {data.game.players[data.game.currentTurn - 1].totalScore}</p>
+			<!-- Dice Rolling Button -->
+			{#if diceRolls.length === 0}
+				<button class="rollDiceButton" disabled={rollButtonDisabled} on:click={() => rollDice(5)}
+					>Roll Dice</button
+				>
+			{:else if diceRolls.length === 1}
+				<button class="rollDiceButton" disabled={rollButtonDisabled} on:click={() => rollDice(1)}
+					>Roll Again</button
+				>
+			{:else if diceRolls.length === 2}
+				<button class="rollDiceButton" disabled={rollButtonDisabled} on:click={() => rollDice(2)}
+					>Roll Again</button
+				>
+			{:else if diceRolls.length === 3}
+				<button class="rollDiceButton" disabled={rollButtonDisabled} on:click={() => rollDice(3)}
+					>Roll Again</button
+				>
+			{:else if diceRolls.length === 4}
+				<button class="rollDiceButton" disabled={rollButtonDisabled} on:click={() => rollDice(4)}
+					>Roll Again</button
+				>
+			{:else if diceRolls.length === 5}
+				<button class="rollDiceButton" disabled={rollButtonDisabled} on:click={() => rollDice(5)}
+					>Roll Again</button
+				>
+			{/if}
+			<!-- End Turn Button -->
 
-		<button
-			class="endTurnButton"
-			disabled={endTurnButtonDisabled}
-			on:click|preventDefault={() => endTurn()}>End Turn</button
-		>
-	</article>
+			<button
+				class="endTurnButton"
+				disabled={endTurnButtonDisabled}
+				on:click|preventDefault={() => endTurn()}>End Turn</button
+			>
+		</article>
+	{/if}
+	{#if gameOver === true}
+		<article class="winningSection">
+			<h2>Game Over</h2>
+			<p>Winner: {data.game.players[data.game.currentTurn - 1].nickname}</p>
+			<p>Score: {data.game.players[data.game.currentTurn - 1].totalScore}</p>
+			<a href="/game/new">Play Again</a>
+			<a href="/">Go Home</a>
+		</article>
+	{/if}
 </main>
 
 <style>
@@ -463,12 +571,7 @@
 		position: relative;
 		margin-bottom: 2rem;
 	}
-	.diceSection p {
-		font-size: 2rem;
-	}
-	.diceSection p:hover {
-		cursor: pointer;
-	}
+
 	h2 {
 		font-size: 2rem;
 		text-decoration: underline;
@@ -476,5 +579,11 @@
 	}
 	.infoBox p {
 		font-size: 1.5rem;
+	}
+	.winningSection {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
 	}
 </style>
