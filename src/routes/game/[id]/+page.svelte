@@ -471,4 +471,7 @@
 		text-decoration: underline;
 		margin-bottom: 1rem;
 	}
+	.infoBox p {
+		font-size: 1.5rem;
+	}
 </style>

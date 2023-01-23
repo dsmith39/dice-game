@@ -7,6 +7,7 @@ module.exports = {
 
 	parserOptions: {
 		sourceType: 'module',
+		requireConfigFile: false,
 		ecmaVersion: 2020
 	},
 	env: {
