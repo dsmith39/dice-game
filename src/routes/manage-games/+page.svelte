@@ -5,7 +5,7 @@
 	console.log(data);
 </script>
 
-<h1>Resume a Game</h1>
+<h1>Saved Games</h1>
 {#each data.games as game}
 	<div class="gameInfo">
 		<h2>A {game.playerNum} player game</h2>
