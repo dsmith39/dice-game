@@ -1,5 +1,6 @@
 <script>
 	// @ts-nocheck
+	//MARK: - Import Modules
 	import lodash from 'lodash';
 	//import dice images
 	import dice1 from '$lib/assets/dice1.svg';
@@ -9,48 +10,67 @@
 	import dice5 from '$lib/assets/dice5.svg';
 	import dice6 from '$lib/assets/dice6.svg';
 
+	//MARK: - Import Data From Database
 	/** The Game data that is fetched from the database */
 	export let data;
 
-	//Setup States
-	/**
-	 * @type {number} **The Total Number of Turns Taken**
-	 * */
+	//MARK: - States
 
+	/**
+	 * @type {boolean} **A Boolean that stores the state of the roll button**
+	 */
 	let rollButtonDisabled = false;
+	/**
+	 * @type {boolean} **A Boolean that stores the state of the end turn button**
+	 */
 	let endTurnButtonDisabled = true;
 	/**
 	 * @type {number[]} **An Array that stores what dice values the user rolls**
 	 */
 	let diceRolls = [];
+	/**
+	 * @type {number[]} **Stores an Array of Triplets if the user gets a triplet**
+	 */
 	let tripArray = [];
+	/**
+	 * @type {number[]} **Stores an Array of Quads if the user gets a quad**
+	 */
+	let quadArray = [];
 	/**
 	 * @type {Array<Number>} **An Array that stores what dice values the user chooses. The choice is made by selecting a value from the `diceRolls` array**
 	 */
 	let chosenDice = [];
+	/**
+	 * @type {boolean} **A Boolean that stores the state of the game. If the game is over, then the value is `true`**
+	 */
 	let gameOver = false;
 	/**
-	 * @type {{jackpot: boolean, crapout: boolean, choseWrongInput: boolean, rollSuccess: boolean, triplet: boolean}} An Array that stores user feedback messages
+	 * @type {{jackpot: boolean, crapout: boolean, choseWrongInput: boolean, rollSuccess: boolean, triplet: boolean, quad: boolean, }} An object that stores user feedback messages
 	 */
 	let alerts = {
 		jackpot: false,
 		crapout: false,
 		triplet: false,
+		quad: false,
 		choseWrongInput: false,
 		rollSuccess: false
 	};
+	/**
+	 * @type {{ones: number, fives: number, triplet: number, quad: number, jackpot: number, totalScore: number, quad: number}} An Object that stores the score of the user
+	 */
 	let score = {
 		ones: 0,
 		fives: 0,
 		triplet: 0,
+		quad: 0,
 		jackpot: 0,
 		totalScore: 0
 	};
 
+	//MARK: - Data Reset Functions
 	/**
-	 * ## Change Turn
-	 * @description **This is a function that changes the current turn. It also accumlates the number of total turns taken in the game so far**
-	 * @returns {number} The current turn
+	 * ## Reset Data
+	 * @description **A Function for resetting the data of the game all at once**
 	 */
 	function resetData() {
 		//Reset the dice rolls
@@ -69,23 +89,9 @@
 			fives: 0,
 			triplet: 0,
 			jackpot: 0,
+			quad: 0,
 			totalScore: 0
 		};
-	}
-	function changeTurn() {
-		//Change the turn
-		data.game.currentTurn += 1;
-		//Accumulate the total number of turns
-		data.game.totalTurns += 1;
-		//Reset the dice rolls
-		if (data.game.currentTurn > data.game.playerNum) {
-			data.game.currentTurn = 1;
-		}
-	}
-
-	function accumulateScore() {
-		data.game.players[data.game.currentTurn - 1].totalScore += score.totalScore;
-		console.log('The Submited Score: \n', data.game.players[data.game.currentTurn - 1].totalScore);
 	}
 
 	/**
@@ -98,9 +104,22 @@
 			crapout: false,
 			choseWrongInput: false,
 			rollSuccess: false,
-			triplet: false
+			triplet: false,
+			quad: false
 		};
 	}
+
+	//MARK: - Score Functions
+
+	/**
+	 * ## Accumulate Score
+	 * @description **This is a function that adds the user's unsaved score, to the user's saved score**
+	 */
+	function accumulateScore() {
+		data.game.players[data.game.currentTurn - 1].totalScore += score.totalScore;
+		console.log('The Submited Score: \n', data.game.players[data.game.currentTurn - 1].totalScore);
+	}
+
 	/**
 	 * ## Detect Crapout
 	 * @description **This is a function that detects if the user Crapped Out**
@@ -114,6 +133,7 @@
 		}
 		return false;
 	}
+
 	/**
 	 * ## Detect Flush
 	 * @description **This is a function that detects if the user rolled a Flush**
@@ -132,9 +152,11 @@
 		}
 		return false;
 	}
+
 	/**
+	 *
 	 * ## Detect triple
-	 * @description **This is a function that detects if the user rolled a Straight**
+	 * @description **This is a function that detects if the user rolled a Triplet**
 	 * @param {Array<Number>} array An array of the dice rolls
 	 */
 	function detectTriplet(array) {
@@ -151,15 +173,36 @@
 				lodash.pullAll(array, tripArray);
 				console.log('tripArray: \n', tripArray);
 				return true;
-			} else if (collection[key] > 3) {
-				tripArray = lodash.fill(Array(3), parseInt(key));
-				lodash.pullAll(array, tripArray.lodash.take(3));
-				console.log('tripArray: \n', tripArray);
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * ## Detect quad
+	 * @description **This is a function that detects if the user rolled a Quad**
+	 * @param {Array<Number>} array An array of the dice rolls
+	 */
+	function detectQuad(array) {
+		/**
+		 * @description **The Array of Triplets**
+		 * @type {string | lodash.List<any>}
+		 */
+		let collection = lodash.countBy(array);
+		console.log('Quad collection: \n', collection);
+
+		for (let key in collection) {
+			if (collection[key] === 4) {
+				quadArray = lodash.fill(Array(4), parseInt(key));
+				lodash.pullAll(array, quadArray);
+				console.log('quadArray: \n', quadArray);
 				return true;
 			}
 		}
 		return false;
 	}
+	// MARK: - Move Dice Functions and Helpers
+
 	/**
 	 * ## Move To Chosen Dice
 	 * @description **This is a function that moves the dice from the diceRolls array to the chosenDice array**
@@ -173,11 +216,14 @@
 		if (detectJackpot(diceRolls) === true) {
 			return;
 		}
+		rollButtonDisabled = false;
 		let chosenRoll = diceRolls[i];
 		endTurnButtonDisabled = false;
 		//Dont allow the user to pick anything thats a 2, 3, 4, or 6
 		if (chosenRoll === 2 || chosenRoll === 3 || chosenRoll === 4 || chosenRoll === 6) {
 			alerts.choseWrongInput = true;
+			rollButtonDisabled = true;
+			endTurnButtonDisabled = true;
 			return;
 		}
 		//This adds the chosen roll to the chosenDice array
@@ -195,7 +241,7 @@
 			score.totalScore += 50;
 		}
 	}
-	// A function to put numbers back in their original spot
+
 	/**
 	 * @param {number} i **The index of the chosen dice roll in the chosenDice array**
 	 */
@@ -203,6 +249,17 @@
 		// this is the roll that was clicked
 		if (alerts.crapout === true) {
 			return;
+		}
+		rollButtonDisabled = true;
+		if (diceRolls.length === 5) {
+			rollButtonDisabled = false;
+		} else {
+			rollButtonDisabled = true;
+		}
+		if (chosenDice.length === 0) {
+			endTurnButtonDisabled = true;
+		} else {
+			endTurnButtonDisabled = false;
 		}
 		let chosenRoll = chosenDice[i];
 		if (chosenRoll === 1) {
@@ -219,6 +276,9 @@
 		//This removes any undefined values from the chosenDice array
 		chosenDice = lodash.compact(chosenDice);
 	}
+
+	// MARK: - Roll Dice Functions and Helpers
+
 	/**
 	 * ## Roll Dice
 	 * @description **This is a function that rolls the dice and returns an array of the dice rolls**
@@ -268,6 +328,31 @@
 			diceRolls = [dice1, dice2, dice3, dice4, dice5];
 		}
 		console.log('diceRolls: \n', diceRolls);
+		if (detectQuad(diceRolls) === true) {
+			if (tripArray[0] === 1) {
+				score.quad = 4000;
+				score.totalScore += score.triplet;
+			} else if (tripArray[0] === 2) {
+				score.triplet = 600;
+				score.totalScore += score.triplet;
+			} else if (tripArray[0] === 3) {
+				score.triplet = 900;
+				score.totalScore += score.triplet;
+			} else if (tripArray[0] === 4) {
+				score.triplet = 1200;
+				score.totalScore += score.triplet;
+			} else if (tripArray[0] === 5) {
+				score.triplet = 1500;
+				score.totalScore += score.triplet;
+			} else if (tripArray[0] === 6) {
+				score.triplet = 1800;
+				score.totalScore += score.triplet;
+			}
+			console.log('Quad!');
+			alerts.quad = true;
+			endTurnButtonDisabled = false;
+			return;
+		}
 		if (detectTriplet(diceRolls) === true) {
 			if (tripArray[0] === 1) {
 				score.triplet = 1000;
@@ -308,7 +393,25 @@
 			alerts.jackpot = true;
 			return;
 		}
+		rollButtonDisabled = true;
 		console.log('Data At Time of Dice Roll: \n', data);
+	}
+
+	// MARK: - Turn Ending Functions
+
+	/**
+	 * ## Change Turn
+	 * @description **A Function for changing the turn**
+	 */
+	function changeTurn() {
+		//Change the turn
+		data.game.currentTurn += 1;
+		//Accumulate the total number of turns
+		data.game.totalTurns += 1;
+		//Reset the dice rolls
+		if (data.game.currentTurn > data.game.playerNum) {
+			data.game.currentTurn = 1;
+		}
 	}
 	/**
 	 * ## End Turn
@@ -415,6 +518,31 @@
 				{/each}
 			</div>
 		{/if}
+
+		<!-- QUAD SECTION -->
+		{#if alerts.quad === true && alerts.crapout === false && gameOver === false}
+			<h2>Quad!</h2>
+			<div class="diceSection">
+				{#each quadArray as dice, i}
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
+					{#if dice === 1}
+						<img src={dice1} alt="Dice 1" />
+					{:else if dice === 2}
+						<img src={dice2} alt="Dice 2" />
+					{:else if dice === 3}
+						<img src={dice3} alt="Dice 3" />
+					{:else if dice === 4}
+						<img src={dice4} alt="Dice 4" />
+					{:else if dice === 5}
+						<img src={dice5} alt="Dice 5" />
+					{:else if dice === 6}
+						<img src={dice6} alt="Dice 6" />
+					{/if}
+				{/each}
+			</div>
+		{/if}
+
+		<!-- TRIPLET SECTION -->
 		{#if alerts.triplet === true && alerts.crapout === false && gameOver === false}
 			<h2>Triplet!</h2>
 			<div class="diceSection">
@@ -436,6 +564,8 @@
 				{/each}
 			</div>
 		{/if}
+
+		<!-- JACKPOT SECTION -->
 		{#if alerts.jackpot === true && alerts.crapout === false && gameOver === false}
 			<h2>Jackpot!</h2>
 		{/if}
@@ -525,6 +655,7 @@
 			>
 		</article>
 	{/if}
+	<!-- Game Won Section -->
 	{#if gameOver === true}
 		<article class="winningSection">
 			<h2>Game Over</h2>
